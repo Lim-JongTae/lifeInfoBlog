@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 게시글
+model Post {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  description String?
+  content     String
+  categoryId  String   @map("category_id")
+  category    Category @relation(fields: [categoryId], references: [id])
+  tags        String[] @default([])
+  published   Boolean  @default(false)
+  viewCount   Int      @default(0) @map("view_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  pageViews   PageView[]
+
+  @@map("posts")
+}
+
+// 카테고리
+model Category {
+  id          String  @id @default(uuid())
+  slug        String  @unique
+  name        String
+  description String?
+  icon        String?
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  posts       Post[]
+
+  @@map("categories")
+}
+
+// 조회수 기록 (일별 통계)
+model PageView {
+  id       Int      @id @default(autoincrement())
+  postId   String   @map("post_id")
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now()) @map("viewed_at") @db.Date
+  count    Int      @default(1)
+
+  @@unique([postId, viewedAt])
+  @@map("page_views")
+}
+
+// 관리자 (허용된 이메일 목록)
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admin_users")
+}

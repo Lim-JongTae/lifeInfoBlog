@@ -55,9 +55,14 @@
     <footer class="border-t border-gray-200 dark:border-gray-800 py-8">
       <UContainer>
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-          <p class="text-sm text-gray-500">
-            © {{ new Date().getFullYear() }} 생활정보 블로그. All rights reserved.
-          </p>
+          <div class="flex justify-between items-center space-x-2">
+            <NuxtLink to="/">
+              <NuxtImg src="/icon.png" width="30" height="30" />
+            </NuxtLink>
+            <p class="text-sm text-gray-500">
+              © {{ new Date().getFullYear() }} 생활정보 블로그. All rights reserved.
+            </p>
+          </div>
           <div class="flex gap-4">
             <NuxtLink to="/about" class="text-sm text-gray-500 hover:text-primary">
               소개
