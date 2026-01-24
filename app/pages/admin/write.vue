@@ -3,17 +3,9 @@
     <UContainer class="py-8">
       <!-- 헤더 -->
       <div class="flex items-center justify-between mb-8">
-        <div class="flex items-center gap-4">
-          <UButton
-            icon="i-heroicons-arrow-left"
-            color="neutral"
-            variant="ghost"
-            to="/admin"
-          />
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            새 글 작성
-          </h1>
-        </div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          새 글 작성
+        </h1>
         <div class="flex gap-2">
           <UButton
             color="neutral"
@@ -28,69 +20,15 @@
             :loading="saving"
             @click="handleSave(true)"
           >
-            발행하기
+            게시하기
           </UButton>
         </div>
       </div>
 
-      <!-- 에러 메시지 -->
-      <UAlert
-        v-if="error"
-        color="error"
-        icon="i-heroicons-exclamation-triangle"
-        class="mb-6"
-        :close-button="{ onClick: () => error = '' }"
-      >
-        {{ error }}
-      </UAlert>
-
       <!-- 작성 폼 -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- 메인 콘텐츠 -->
-        <div class="lg:col-span-2 space-y-6">
-          <UCard>
-            <div class="space-y-4">
-              <UFormField label="제목" required>
-                <UInput
-                  v-model="form.title"
-                  placeholder="글 제목을 입력하세요"
-                  size="lg"
-                />
-              </UFormField>
-
-              <UFormField label="슬러그 (URL)" required>
-                <UInput
-                  v-model="form.slug"
-                  placeholder="url-friendly-slug"
-                  icon="i-heroicons-link"
-                />
-              </UFormField>
-
-              <UFormField label="설명">
-                <UTextarea
-                  v-model="form.description"
-                  placeholder="글에 대한 간단한 설명"
-                  :rows="2"
-                />
-              </UFormField>
-            </div>
-          </UCard>
-
-          <UCard>
-            <template #header>
-              <span class="font-semibold">본문</span>
-            </template>
-            <UTextarea
-              v-model="form.content"
-              placeholder="마크다운으로 작성하세요..."
-              :rows="20"
-              class="font-mono"
-            />
-          </UCard>
-        </div>
-
-        <!-- 사이드바 -->
-        <div class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- 사이드바 (모바일에서 먼저 표시) -->
+        <div class="order-1 lg:order-2 lg:col-span-1 space-y-6">
           <UCard>
             <template #header>
               <span class="font-semibold">카테고리</span>
@@ -99,7 +37,9 @@
               v-model="form.categoryId"
               :items="categoryOptions"
               placeholder="카테고리 선택"
+              class="w-full"
             />
+            <p v-if="errors.categoryId" class="text-sm text-red-500 mt-2">{{ errors.categoryId }}</p>
           </UCard>
 
           <UCard>
@@ -109,6 +49,7 @@
             <UInput
               v-model="tagInput"
               placeholder="태그 입력 후 Enter"
+              class="w-full"
               @keyup.enter="addTag"
             />
             <div v-if="form.tags.length > 0" class="flex flex-wrap gap-2 mt-3">
@@ -130,13 +71,63 @@
               </UBadge>
             </div>
           </UCard>
+        </div>
 
-          <!-- 미리보기 -->
+        <!-- 메인 콘텐츠 -->
+        <div class="order-2 lg:order-1 lg:col-span-3 space-y-6">
+          <UCard>
+            <div class="space-y-6">
+              <UFormField label="제목" required :error="errors.title">
+                <UInput
+                  v-model="form.title"
+                  placeholder="글 제목을 입력하세요"
+                  size="lg"
+                  class="w-full"
+                />
+              </UFormField>
+
+              <UFormField label="슬러그 (URL)" :error="errors.slug">
+                <div class="flex gap-2">
+                  <UInput
+                    v-model="form.slug"
+                    placeholder="자동 생성됩니다"
+                    icon="i-heroicons-link"
+                    class="flex-1"
+                    readonly
+                  />
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    @click="generateSlug"
+                  >
+                    재생성
+                  </UButton>
+                </div>
+                <template #hint>
+                  <span class="text-xs text-gray-500">카테고리-날짜-순번 형식으로 자동 생성</span>
+                </template>
+              </UFormField>
+
+              <UFormField label="설명" :error="errors.description">
+                <UTextarea
+                  v-model="form.description"
+                  placeholder="글에 대한 간단한 설명 (SEO에 사용됩니다)"
+                  :rows="3"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+          </UCard>
+
+          <!-- Tiptap 에디터 -->
           <UCard>
             <template #header>
-              <span class="font-semibold">미리보기</span>
+              <div class="flex items-center justify-between">
+                <span class="font-semibold">본문</span>
+                <span v-if="errors.content" class="text-sm text-red-500">{{ errors.content }}</span>
+              </div>
             </template>
-            <div class="prose prose-sm dark:prose-invert max-w-none" v-html="previewContent" />
+            <AdminTiptapEditor v-model="form.content" />
           </UCard>
         </div>
       </div>
@@ -147,8 +138,12 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCategoryStore } from '~/stores/category'
+import { postSchema } from '~/schemas/post'
+import { getZodError } from '~/utils/get-error'
+import { getApiError } from '~/utils/get-error'
 
 definePageMeta({
+  layout: 'admin' as any,
   middleware: 'auth'
 })
 
@@ -170,7 +165,7 @@ const form = ref({
 
 const tagInput = ref('')
 const saving = ref(false)
-const error = ref('')
+const errors = ref<Record<string, string>>({})
 
 // 카테고리 옵션
 const categoryOptions = computed(() => {
@@ -180,16 +175,45 @@ const categoryOptions = computed(() => {
   }))
 })
 
-// 제목 → 슬러그 자동 생성
-watch(() => form.value.title, (title) => {
-  if (!form.value.slug) {
-    form.value.slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9가-힣\s]/g, '')
-      .replace(/\s+/g, '-')
-      .substring(0, 50)
+// 슬러그 자동 생성
+const generateSlug = async () => {
+  if (!form.value.categoryId) {
+    errors.value.slug = '먼저 카테고리를 선택해주세요.'
+    return
+  }
+
+  const category = categories.value.find(c => c.id === form.value.categoryId)
+  if (!category) return
+
+  // 오늘 날짜
+  const today = new Date()
+  const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`
+
+  // 순번 가져오기
+  try {
+    const { nextNumber } = await $fetch<{ nextNumber: number }>('/api/posts/next-number', {
+      query: {
+        category: category.slug,
+        date: dateStr
+      }
+    })
+    
+    form.value.slug = `${category.slug}-${dateStr}-${String(nextNumber).padStart(3, '0')}`
+    errors.value.slug = ''
+  } catch (e) {
+    console.error('Slug generation error:', e)
+    // 기본 순번 001 사용
+    form.value.slug = `${category.slug}-${dateStr}-001`
+  }
+}
+
+// 카테고리 선택 시 슬러그 자동 생성
+watch(() => form.value.categoryId, () => {
+  if (form.value.categoryId && !form.value.slug) {
+    generateSlug()
   }
 })
+
 
 // 태그 추가
 const addTag = () => {
@@ -205,44 +229,33 @@ const removeTag = (tag: string) => {
   form.value.tags = form.value.tags.filter(t => t !== tag)
 }
 
-// 미리보기
-const previewContent = computed(() => {
-  if (!form.value.content) return '<p class="text-gray-400">본문을 입력하면 미리보기가 표시됩니다.</p>'
+// 유효성 검사
+const validate = (): boolean => {
+  errors.value = {}
   
-  let html = form.value.content
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/^\- (.*$)/gim, '<li>$1</li>')
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    .replace(/\n\n/gim, '</p><p>')
-    .replace(/\n/gim, '<br>')
+  const result = postSchema.safeParse(form.value)
   
-  return `<p>${html}</p>`
-})
+  if (!result.success) {
+    result.error.issues.forEach(err => {
+      const field = err.path[0] as string
+      if (!errors.value[field]) {
+        errors.value[field] = err.message
+      }
+    })
+    return false
+  }
+  
+  return true
+}
 
 // 저장
 const handleSave = async (published: boolean) => {
-  error.value = ''
+  // 슬러그가 없으면 자동 생성
+  if (!form.value.slug) {
+    await generateSlug()
+  }
 
-  // 유효성 검사
-  if (!form.value.title.trim()) {
-    error.value = '제목을 입력해주세요.'
-    return
-  }
-  if (!form.value.slug.trim()) {
-    error.value = '슬러그를 입력해주세요.'
-    return
-  }
-  if (!form.value.categoryId) {
-    error.value = '카테고리를 선택해주세요.'
-    return
-  }
-  if (!form.value.content.trim()) {
-    error.value = '본문을 입력해주세요.'
-    return
-  }
+  if (!validate()) return
 
   saving.value = true
   try {
@@ -256,7 +269,8 @@ const handleSave = async (published: boolean) => {
 
     router.push('/admin')
   } catch (e: any) {
-    error.value = e.data?.message || '저장에 실패했습니다.'
+    const error = getApiError(e)
+    alert(error.statusMessage)
   } finally {
     saving.value = false
   }

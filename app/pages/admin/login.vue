@@ -1,58 +1,52 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center">
+  <UContainer class="flex items-center justify-center sm:p-4 sm:min-w-160 mt-56 dark:bg-gray-500 bg-gray-100">
     <UCard class="w-full max-w-md">
       <template #header>
-        <h1 class="text-xl font-bold text-center">관리자 로그인</h1>
-      </template>
-
-      <form @submit.prevent="handleLogin" class="space-y-4">
-        <UFormField label="이메일">
-          <UInput
-            v-model="email"
-            type="email"
-            placeholder="admin@example.com"
-            icon="i-heroicons-envelope"
-            required
-          />
-        </UFormField>
-
-        <UFormField label="비밀번호">
-          <UInput
-            v-model="password"
-            type="password"
-            placeholder="••••••••"
-            icon="i-heroicons-lock-closed"
-            required
-          />
-        </UFormField>
-
-        <UButton
-          type="submit"
+        <div class="text-center p-4">
+          <h1 class="text-sm sm:text-xl font-semibold">
+            관리자 모드에 오신것을 환경합니다.
+          </h1>
+        </div>
+    </template>
+    
+      <UForm :schema="schema" :state="state" class="space-y-4" @submit.prevent="handleLogin" >       
+        <UFormField label="이메일" name="email" required>
+          <UInput v-model="state.email" placeholder="이메일" class="w-full"/>
+       </UFormField>
+        <UFormField label="비밀번호" name="password" required>
+          <UInput v-model="state.password" placeholder="비밀번호" type="password" class="w-full"/>
+       </UFormField>        
+       <UButton type="submit" color="neutral" block>
+        로그 인
+       </UButton>
+      </UForm>
+      <!-- <div class="text-center text-sm">
+        회원가입 하기!
+        <UButton 
+          variant="link"
           color="primary"
-          block
-          :loading="loading"
+          :disabled="false"
+          to="/auth/register"
+          class="-ml-2"
         >
-          로그인
+        회원가입
         </UButton>
-
-        <p v-if="error" class="text-sm text-red-500 text-center">
-          {{ error }}
-        </p>
-      </form>
+      </div>  -->
+    
     </UCard>
-  </div>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
+import * as z from 'zod'
 definePageMeta({
   layout: false
 })
-
 const supabase = useSupabaseClient()
 const router = useRouter()
 
-const email = ref('')
-const password = ref('')
+// const email = ref('')
+// const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
@@ -62,8 +56,8 @@ const handleLogin = async () => {
 
   try {
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email: email.value,
-      password: password.value
+      email: state.email ?? '',
+      password: state.password ?? ''
     })
 
     if (authError) throw authError
@@ -71,7 +65,7 @@ const handleLogin = async () => {
     // 관리자 권한 확인
     const isAdmin  = await $fetch<boolean>('/api/auth/verify', {
       method: 'POST',
-      body: { email: email.value }
+      body: { email: state.email }
     })
 
     if (!isAdmin) {
@@ -86,4 +80,18 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
+const schema = z.object({  
+  email: z.email('이메일을 확인하세요!'),
+  password: z.string('Password is required').min(8, '비밀번호는 8자 이상이어야 됩니다.') 
+})
+
+type Schema = z.output<typeof schema>
+
+const state = reactive<Partial<Schema>>({
+  email: "" as string,
+  password: "" as string
+})
 </script>
+<style scoped>
+
+</style>

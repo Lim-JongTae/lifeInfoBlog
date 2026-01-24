@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   srcDir: 'app/',  
-  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxtjs/supabase', '@pinia/nuxt'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxtjs/supabase', '@pinia/nuxt', '@nuxtjs/sitemap'],
   css: ['~/assets/css/main.css'],
   supabase: {
     redirectOptions: {
@@ -11,6 +11,10 @@ export default defineNuxtConfig({
       callback: '/admin',
       exclude: ['/', '/post/*', '/category/*', '/search']
     }
+  },
+  
+  sitemap: {    
+    sources: ['/api/__sitemap__/urls']
   },
   ui: {
     fonts: true,
@@ -20,11 +24,15 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL,
     directUrl: process.env.DIRECT_URL,
     adminEmail: process.env.ADMIN_EMAIL,
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
     
     public: {
       siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       siteName: '생활정보 블로그',
-      siteDescription: '금융, 연금, 보험 등 실용적인 생활정보를 제공합니다.'
+      siteDescription: '금융, 연금, 보험 등 실용적인 생활정보를 제공합니다.',
+      adsenseClient: process.env.NUXT_PUBLIC_ADSENSE_CLIENT || '' 
     }
   },
   app: {
@@ -50,5 +58,10 @@ export default defineNuxtConfig({
 
   nitro: {
     preset: 'vercel'
-  }
+  },
+  //@ts-ignore
+  sitemap: {
+    sources: ['/api/__sitemap__/urls'],
+    exclude: ['/admin/**', '/admin']
+  },
 })

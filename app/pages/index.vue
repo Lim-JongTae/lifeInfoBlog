@@ -1,14 +1,24 @@
 <template>
-  <div>
+   <div>
     <!-- Hero Section -->
-    <section class="py-16 md:py-24 bg-linear-to-b from-primary-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <UContainer>
+    <section class="relative py-16 md:py-24 overflow-hidden bg-[linear-gradient(to_top,oklch(0.2_0.05_200/0.9),oklch(0.9_0.05_150/0.4)_10%),url('/background.avif')] bg-cover bg-center">
+      <!-- 구름 레이어 -->
+      <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <img 
+          src="/clouds.png" 
+          alt="" 
+          class="clouds-animation absolute w-[200%] h-full object-cover opacity-80"
+        />
+      </div>
+
+      <!-- 콘텐츠 -->
+      <UContainer class="relative z-10">
         <div class="text-center max-w-3xl mx-auto">
-          <h1 class="text-sm sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+          <h1 class="text-sm sm:text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 mb-4">
             금융, 연금, 보험 정보를
             <span class="text-primary">한눈에</span>
           </h1>
-          <p class="text-sm sm:text-lg text-gray-600 dark:text-gray-400 mb-8">
+          <p class="text-sm sm:text-lg text-gray-700 dark:text-gray-700 mb-8">
             압류방지통장, 새도약기금, 연금 수령 전략 등 실용적인 생활정보를 제공합니다.
           </p>
           
@@ -79,10 +89,8 @@
 
     <!-- 광고 배너 영역 (AdSense 자리) -->
     <section class="py-4">
-      <UContainer>
-        <div class="bg-gray-100 dark:bg-gray-800 rounded-lg h-24 flex items-center justify-center text-gray-400">
-          광고 영역 (AdSense)
-        </div>
+      <UContainer>        
+        <AdSense type="banner" slot="1234567890" />
       </UContainer>
     </section>
 
@@ -141,7 +149,8 @@
         </div>
       </UContainer>
     </section>
-
+    <!-- 최신글 섹션 아래 -->
+    <AdSense type="banner" slot="1234567891" />
     <!-- 카테고리별 Section -->
     <section class="py-12 bg-gray-50 dark:bg-gray-900">
       <UContainer>
@@ -220,3 +229,28 @@ const formatDate = (dateString: string) => {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
 </script>
+<style scoped>
+
+.cloud-wrap {
+  position: relative;
+  overflow: hidden;         /* 밖으로 나가는 부분 가리기 */
+  width: 100%;
+  height: 240px;            /* 원하는 높이로 */
+  background: linear-gradient(#cfe9ff, #eaf4ff); /* 하늘색 배경 예시 */
+}
+
+.clouds {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  /* 이미지가 화면 밖 왼쪽에서 시작해 오른쪽 밖으로 빠져나가도록 */
+  animation: cloudFlow 20s linear infinite;
+  will-change: transform;    /* 성능 힌트 */
+}
+
+/* 왼쪽(−100%) → 오른쪽(+100%) */
+@keyframes cloudFlow {
+  0% { transform: translate(-100%, -50%); }
+ 
+}
+</style>

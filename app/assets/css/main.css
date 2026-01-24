@@ -1,2 +1,18 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+@source "../../../content/**/*";
+
+/* 구름 애니메이션 */
+@keyframes clouds-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.clouds-animation {
+  animation: clouds-drift 60s linear infinite;
+}

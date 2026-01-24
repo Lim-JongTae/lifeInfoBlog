@@ -14,14 +14,17 @@
           >
             새 글 작성
           </UButton>
-          <UButton
+          <!-- <div v-if="isAdmin">
+
+            <UButton
             color="neutral"
             variant="ghost"
             icon="i-heroicons-arrow-right-on-rectangle"
             @click="handleLogout"
-          >
+            >
             로그아웃
           </UButton>
+        </div> -->
         </div>
       </div>
 
@@ -164,9 +167,10 @@ import { getCategoryColor } from '~/types/types'
 import type { Post } from '~/types/types'
 
 definePageMeta({
+  layout: 'admin' as any,
   middleware: 'auth'
 })
-
+const { isAdmin, checkAdmin } = useAdmin()
 const supabase = useSupabaseClient()
 const router = useRouter()
 

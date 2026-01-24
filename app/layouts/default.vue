@@ -32,7 +32,22 @@
               to="/search"
             />
             <UColorModeButton />
-            
+                   <!-- 관리자 버튼 -->
+             <UTooltip text="관리자페이지로 이동.">
+               <UButton
+               v-if="isAdmin"
+               to="/admin"
+               color="primary"
+               variant="soft"
+               icon="i-heroicons-cog-6-tooth"
+               size="sm"
+               >
+               <div class="hidden sm:block">
+                 관리자모드
+               </div>
+               
+              </UButton>
+             </UTooltip>
             <!-- 모바일 메뉴 -->
             <UButton
               icon="i-heroicons-bars-3"
@@ -45,7 +60,50 @@
         </nav>
       </UContainer>
     </header>
-
+       <!-- 모바일 메뉴 -->
+    <USlideover v-model:open="mobileMenuOpen">
+      <template #content>
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <span class="font-bold text-lg">메뉴</span>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-heroicons-x-mark"
+              @click="mobileMenuOpen = false"
+            />
+          </div>
+          <nav class="space-y-2">
+            <UButton
+              v-for="category in categories"
+              :key="category.slug"
+              :to="`/category/${category.slug}`"
+              color="neutral"
+              variant="ghost"
+              block
+              class="justify-start"
+              @click="mobileMenuOpen = false"
+            >
+              {{ category.name }}
+            </UButton>
+            
+            <!-- 관리자 (모바일) -->
+            <UButton
+              v-if="isAdmin"
+              to="/admin"
+              color="primary"
+              variant="soft"
+              block
+              class="justify-start mt-4"
+              icon="i-heroicons-cog-6-tooth"
+              @click="mobileMenuOpen = false"
+            >
+              관리자 대시보드
+            </UButton>
+          </nav>
+        </div>
+      </template>
+    </USlideover>
     <!-- Main Content -->
     <main class="flex-1">
       <slot />
@@ -106,14 +164,19 @@
 </template>
 
 <script setup lang="ts">
-const mobileMenuOpen = ref(false)
 
-// 임시 카테고리 데이터 (나중에 Store에서 가져옴)
-const categories = [
-  { slug: 'finance', name: '금융위기탈출' },
-  { slug: 'support', name: '정부지원금' },
-  { slug: 'pension', name: '연금가이드' },
-  { slug: 'insurance', name: '보험정보' },
-  { slug: 'tips', name: '생활꿀팁' }
-]
+import { storeToRefs } from 'pinia'
+import { useCategoryStore } from '~/stores/category'
+const mobileMenuOpen = ref(false)
+const categoryStore = useCategoryStore()
+const { categories } = storeToRefs(categoryStore)
+
+// 관리자 확인
+const { isAdmin, checkAdmin } = useAdmin()
+
+onMounted(() => {
+  categoryStore.fetchCategories()
+  checkAdmin()
+})
+
 </script>

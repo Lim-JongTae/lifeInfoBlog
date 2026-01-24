@@ -1,4 +1,18 @@
 <template>
+    <div>
+    <!-- SEO -->
+    <SeoHead
+      v-if="post"
+      :title="`${post.title} - 생활정보 블로그`"
+      :description="post.description || ''"
+      type="article"
+      :published-at="post.createdAt"
+      :modified-at="post.updatedAt"
+    />
+    
+    <!-- 나머지 내용... -->
+  </div>
+
   <div>
     <UContainer class="py-8">
       <div class="max-w-4xl mx-auto">
@@ -85,6 +99,7 @@
                 </nav>
                 
                 <!-- 광고 영역 -->
+                <AdSense type="in-article" slot="1234567892" />
                 <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-center text-sm text-gray-400">
                   광고 영역
                 </div>
@@ -109,13 +124,13 @@
           </div>
 
           <!-- 이전/다음 글 -->
-          <div class="flex justify-between gap-4">
+          <div class="sm:justify-between sm:gap-4 sm:flex space-x-1 space-y-1 textce">
             <UButton
               v-if="surroundPosts.prev"
               :to="`/post/${surroundPosts.prev.slug}`"
               color="neutral"
               variant="outline"
-              class="flex-1 justify-start"
+              class="flex-1 justify-start hover:-translate-y-1 hover:scale-110"
             >
               <template #leading>
                 <UIcon name="i-heroicons-arrow-left" />
@@ -134,7 +149,7 @@
               variant="outline"
               class="flex-1 justify-end"
             >
-              <div class="text-right">
+              <div class="text-right transform transition hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:transform-none ">
                 <div class="text-xs text-gray-500">다음 글</div>
                 <div class="truncate">{{ surroundPosts.next.title }}</div>
               </div>
@@ -144,7 +159,8 @@
             </UButton>
             <div v-else class="flex-1" />
           </div>
-
+          <!--광고-->
+          <AdSense type="sidebar" slot="1234567893" />
           <!-- 관련 글 -->
           <section v-if="relatedPosts.length > 0" class="mt-12">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
@@ -170,6 +186,8 @@
           </section>
         </template>
       </div>
+      <!--광고-->
+      <AdSense type="rectangle" slot="1234567894" />
     </UContainer>
   </div>
 </template>

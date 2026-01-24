@@ -1,14 +1,17 @@
 import { prisma } from '~~/server/utils/prisma'
 
 export default defineEventHandler(async (event) => {
-  const slug = getRouterParam(event, 'slug')
+  const slugParam = getRouterParam(event, 'slug')
 
-  if (!slug) {
+  if (!slugParam) {
     throw createError({
       statusCode: 400,
       message: 'Slug is required'
     })
   }
+
+  // URL 디코딩 (한글 슬러그 지원)
+  const slug = decodeURIComponent(slugParam)
 
   const post = await prisma.post.findUnique({
     where: { slug },

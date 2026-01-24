@@ -62,12 +62,14 @@
                     v-model="form.title"
                     placeholder="글 제목을 입력하세요"
                     size="lg"
+                    class="block"
                   />
                 </UFormField>
 
                 <UFormField label="슬러그 (URL)" required>
                   <UInput
                     v-model="form.slug"
+                    class="block"
                     placeholder="url-friendly-slug"
                     icon="i-heroicons-link"
                   />
@@ -76,23 +78,20 @@
                 <UFormField label="설명">
                   <UTextarea
                     v-model="form.description"
-                    placeholder="글에 대한 간단한 설명"
+                    class="block"
+                    placeholder="글에 대한 간단한 설명 (SEO에 사용됩니다)"
                     :rows="2"
                   />
                 </UFormField>
               </div>
             </UCard>
 
+            <!-- Tiptap 에디터 -->
             <UCard>
               <template #header>
                 <span class="font-semibold">본문</span>
               </template>
-              <UTextarea
-                v-model="form.content"
-                placeholder="마크다운으로 작성하세요..."
-                :rows="20"
-                class="font-mono"
-              />
+              <AdminTiptapEditor v-model="form.content" />
             </UCard>
           </div>
 
@@ -116,7 +115,7 @@
               <UInput
                 v-model="tagInput"
                 placeholder="태그 입력 후 Enter"
-                @keyup.enter="addTag"
+                @keyup.enter="addTag"                
               />
               <div v-if="form.tags.length > 0" class="flex flex-wrap gap-2 mt-3">
                 <UBadge
@@ -148,14 +147,6 @@
                 </UBadge>
               </div>
             </UCard>
-
-            <!-- 미리보기 -->
-            <UCard>
-              <template #header>
-                <span class="font-semibold">미리보기</span>
-              </template>
-              <div class="prose prose-sm dark:prose-invert max-w-none" v-html="previewContent" />
-            </UCard>
           </div>
         </div>
       </template>
@@ -175,6 +166,7 @@ import { useCategoryStore } from '~/stores/category'
 import type { Post } from '~/types/types'
 
 definePageMeta({
+  layout: 'admin' as any,
   middleware: 'auth'
 })
 
@@ -255,23 +247,6 @@ const removeTag = (tag: string) => {
   if (!form.value) return
   form.value.tags = form.value.tags.filter(t => t !== tag)
 }
-
-// 미리보기
-const previewContent = computed(() => {
-  if (!form.value?.content) return '<p class="text-gray-400">본문을 입력하면 미리보기가 표시됩니다.</p>'
-  
-  let html = form.value.content
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/^\- (.*$)/gim, '<li>$1</li>')
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    .replace(/\n\n/gim, '</p><p>')
-    .replace(/\n/gim, '<br>')
-  
-  return `<p>${html}</p>`
-})
 
 // 저장
 const handleSave = async (published: boolean) => {
