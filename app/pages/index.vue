@@ -1,13 +1,13 @@
 <template>
    <div>
     <!-- Hero Section -->
-    <section class="relative py-16 md:py-24 overflow-hidden bg-[linear-gradient(to_top,oklch(0.2_0.05_200/0.9),oklch(0.9_0.05_150/0.4)_10%),url('/background.avif')] bg-cover bg-center">
+    <section class="relative py-16 md:py-24 bg-cover bg-center">
       <!-- 구름 레이어 -->
       <div class="absolute inset-0 pointer-events-none overflow-hidden">
         <img 
-          src="/clouds.png" 
+          src="/___202601242116.gif" 
           alt="" 
-          class="clouds-animation absolute w-[200%] h-full object-cover opacity-80"
+          class="absolute w-[200%] h-full object-cover opacity-80"
         />
       </div>
 
@@ -18,7 +18,7 @@
             금융, 연금, 보험 정보를
             <span class="text-primary">한눈에</span>
           </h1>
-          <p class="text-sm sm:text-lg text-gray-700 dark:text-gray-700 mb-8">
+          <p class="text-sm sm:text-lg text-gray-50 dark:text-gray-50 mb-8">
             압류방지통장, 새도약기금, 연금 수령 전략 등 실용적인 생활정보를 제공합니다.
           </p>
           
@@ -30,7 +30,7 @@
               :to="`/category/${category.slug}`"
               color="neutral"
               variant="soft"
-              size="lg"
+              size="sm" 
             >
               <UIcon :name="category.icon" class="w-4 h-4" />
               {{ category.name }}
@@ -50,11 +50,11 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <NuxtLink
+          <div
             v-for="post in popularPosts"
             :key="post.slug"
-            :to="`/post/${post.slug}`"
-            class="block"
+            class="block cursor-pointer"
+            @click="$router.push(`/post/${post.slug}`)"
           >
             <UCard class="hover:ring-2 hover:ring-primary transition-all h-full">
               <template #header>
@@ -82,7 +82,7 @@
                 </div>
               </template>
             </UCard>
-          </NuxtLink>
+          </div>
         </div>
       </UContainer>
     </section>
@@ -97,28 +97,18 @@
     <!-- 최신글 Section -->
     <section class="py-12">
       <UContainer>
-        <div class="flex items-center justify-between mb-8">
+        <div class="mb-8">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
             📝 최신글
           </h2>
-            <NuxtLink
-              v-for="post in recentPosts"
-              :key="post.slug"
-              :to="`/post/${post.slug}`"
-              class="block"
-            >
-              <!-- <UCard class="hover:ring-2 hover:ring-primary transition-all h-full"> -->
-                <!-- 내용 동일 -->
-              <!-- </UCard> -->
-            </NuxtLink>
-          </div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <NuxtLink
-              v-for="post in popularPosts"
+          <div
+              v-for="post in recentPosts"
               :key="post.slug"
-              :to="`/post/${post.slug}`"
-              class="block"
+              class="block cursor-pointer"
+              @click="$router.push(`/post/${post.slug}`)"
           >
             <UCard class="hover:ring-2 hover:ring-primary transition-all h-full">
                <template #header>
@@ -145,7 +135,7 @@
               </div>
             </template>
           </UCard>
-        </NuxtLink>
+        </div>
         </div>
       </UContainer>
     </section>
@@ -196,7 +186,7 @@ useSeoMeta({
   ogTitle: '생활정보 블로그',
   ogDescription: '금융, 연금, 보험 등 실용적인 생활정보를 제공합니다.',
   ogType: 'website',
-  ogImage: '[og:/headset-infolife_1.png]'
+  ogImage: '[og:/lifeinfo.png]'
 })
 // Stores
 const categoryStore = useCategoryStore()
@@ -218,9 +208,11 @@ const popularPosts = computed(() => {
     .slice(0, 3)
 })
 
-// 최신글
+// 최신글 (생성일 기준 내림차순 정렬)
 const recentPosts = computed(() => {
-  return posts.value.slice(0, 6)
+  return [...posts.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6)
 })
 
 // 날짜 포맷

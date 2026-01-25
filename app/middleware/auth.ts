@@ -1,19 +1,18 @@
 export default defineNuxtRouteMiddleware(async(to, from) => {
-  const supabase = useSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authStore = useAuthStore()
 
-  if (!user) {
-    return navigateTo('/admin/login')
+  // 이미 확인했으면 캐시된 정보 사용
+  if (authStore.isChecked) {
+    if (!authStore.isAuthenticated) {
+      return navigateTo('/admin/login')
+    }
+    return
   }
 
-  // 관리자 권한 확인
-  const isAdmin = await $fetch<boolean>('/api/auth/verify', {
-    method: 'POST',
-    body: { email: user.email }
-  })
+  // 처음 확인하는 경우만 Supabase에 요청
+  const isAdmin = await authStore.checkAuth()
 
   if (!isAdmin) {
-    await supabase.auth.signOut()
     return navigateTo('/admin/login')
   }
 })

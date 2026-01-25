@@ -62,11 +62,10 @@ const handleLogin = async () => {
 
     if (authError) throw authError
 
-    // 관리자 권한 확인
-    const isAdmin  = await $fetch<boolean>('/api/auth/verify', {
-      method: 'POST',
-      body: { email: state.email }
-    })
+    // auth store에서 관리자 권한 확인 및 캐시
+    const authStore = useAuthStore()
+    authStore.isChecked = false // 강제로 다시 확인
+    const isAdmin = await authStore.checkAuth()
 
     if (!isAdmin) {
       await supabase.auth.signOut()

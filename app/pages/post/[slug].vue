@@ -1,18 +1,4 @@
 <template>
-    <div>
-    <!-- SEO -->
-    <SeoHead
-      v-if="post"
-      :title="`${post.title} - 생활정보 블로그`"
-      :description="post.description || ''"
-      type="article"
-      :published-at="post.createdAt"
-      :modified-at="post.updatedAt"
-    />
-    
-    <!-- 나머지 내용... -->
-  </div>
-
   <div>
     <UContainer class="py-8">
       <div class="max-w-4xl mx-auto">
@@ -33,6 +19,15 @@
 
         <!-- 글 내용 -->
         <template v-else>
+          <!-- SEO -->
+          <SeoHead
+            :title="`${post.title} - 생활정보 블로그`"
+            :description="post.description || ''"
+            type="article"
+            :published-at="post.createdAt"
+            :modified-at="post.updatedAt"
+          />
+
           <!-- 뒤로가기 + Breadcrumb -->
           <div class="flex items-center gap-2 mb-6">
             <UButton
@@ -47,15 +42,29 @@
 
           <!-- 글 헤더 -->
           <header class="mb-8">
-            <UBadge :color="getCategoryColor(post.category.slug)" variant="subtle" class="mb-4">
-              {{ post.category.name }}
-            </UBadge>
+            <div class="flex items-center justify-between mb-4">
+              <UBadge :color="getCategoryColor(post.category.slug)" variant="subtle">
+                {{ post.category.name }}
+              </UBadge>
+              
+              <!-- 관리자 수정 버튼 -->
+              <UButton
+                v-if="isAdmin"
+                :to="`/admin/edit/${post.id}`"
+                color="neutral"
+                variant="outline"
+                size="sm"
+                icon="i-heroicons-pencil"
+              >
+                수정
+              </UButton>
+            </div>
             
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               {{ post.title }}
             </h1>
             
-            <p class="text-lg text-gray-600 dark:text-gray-400 mb-4">
+            <p v-if="post.description" class="text-lg text-gray-600 dark:text-gray-400 mb-4">
               {{ post.description }}
             </p>
             
@@ -76,7 +85,7 @@
           <!-- 본문 + TOC 레이아웃 -->
           <div class="flex gap-8">
             <!-- 본문 -->
-            <article class="flex-1 prose prose-lg dark:prose-invert max-w-none">
+            <article class="flex-1 prose prose-lg dark:prose-invert max-w-none prose-headings:scroll-mt-20">
               <div v-html="renderedContent" />
             </article>
 
@@ -86,7 +95,7 @@
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
                   목차
                 </h3>
-                <nav class="space-y-2">
+                <nav v-if="tocItems.length > 0" class="space-y-2">
                   <a
                     v-for="item in tocItems"
                     :key="item.id"
@@ -97,9 +106,9 @@
                     {{ item.text }}
                   </a>
                 </nav>
+                <p v-else class="text-sm text-gray-400">목차가 없습니다.</p>
                 
                 <!-- 광고 영역 -->
-                <AdSense type="in-article" slot="1234567892" />
                 <div class="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-center text-sm text-gray-400">
                   광고 영역
                 </div>
@@ -124,13 +133,13 @@
           </div>
 
           <!-- 이전/다음 글 -->
-          <div class="sm:justify-between sm:gap-4 sm:flex space-x-1 space-y-1 textce">
+          <div class="flex justify-between gap-4">
             <UButton
               v-if="surroundPosts.prev"
               :to="`/post/${surroundPosts.prev.slug}`"
               color="neutral"
               variant="outline"
-              class="flex-1 justify-start hover:-translate-y-1 hover:scale-110"
+              class="flex-1 justify-start"
             >
               <template #leading>
                 <UIcon name="i-heroicons-arrow-left" />
@@ -149,7 +158,7 @@
               variant="outline"
               class="flex-1 justify-end"
             >
-              <div class="text-right transform transition hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:transform-none ">
+              <div class="text-right">
                 <div class="text-xs text-gray-500">다음 글</div>
                 <div class="truncate">{{ surroundPosts.next.title }}</div>
               </div>
@@ -159,8 +168,7 @@
             </UButton>
             <div v-else class="flex-1" />
           </div>
-          <!--광고-->
-          <AdSense type="sidebar" slot="1234567893" />
+
           <!-- 관련 글 -->
           <section v-if="relatedPosts.length > 0" class="mt-12">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
@@ -186,8 +194,6 @@
           </section>
         </template>
       </div>
-      <!--광고-->
-      <AdSense type="rectangle" slot="1234567894" />
     </UContainer>
   </div>
 </template>
@@ -205,16 +211,45 @@ const slug = route.params.slug as string
 const postStore = usePostStore()
 const { currentPost: post, loading } = storeToRefs(postStore)
 
+// 관리자 확인
+const { isAdmin, checkAdmin } = useAdmin()
+
+// 헤딩에 ID 추가
+const addHeadingIds = (html: string): string => {
+  return html.replace(/<h([1-3])([^>]*)>(.+?)<\/h\1>/g, (match, level, attrs, text) => {
+    // 이미 id가 있으면 스킵
+    if (attrs.includes('id=')) return match
+
+    const cleanText = text.replace(/<[^>]*>/g, '').trim()
+    const id = cleanText
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w가-힣-]/g, '')
+    return `<h${level} id="${id}"${attrs}>${text}</h${level}>`
+  })
+}
+
+// HTML/마크다운 렌더링
+const renderedContent = ref<string>('')
+
+const renderContent = async () => {
+  if (!post.value?.content) {
+    renderedContent.value = ''
+    return
+  }
+
+  // HTML을 그대로 렌더링
+  renderedContent.value = addHeadingIds(post.value.content)
+}
+
+onMounted(async () => {
+  checkAdmin()
+  await renderContent()
+})
+
 // 데이터 로드
 await postStore.fetchPost(slug)
-
-// SEO
-useSeoMeta({
-  title: () => post.value ? `${post.value.title} - 생활정보 블로그` : '게시글',
-  description: () => post.value?.description || '',
-  ogTitle: () => post.value?.title || '',
-  ogDescription: () => post.value?.description || ''
-})
+await renderContent()
 
 // Breadcrumb
 const breadcrumbItems = computed(() => {
@@ -226,59 +261,38 @@ const breadcrumbItems = computed(() => {
   ]
 })
 
-// 마크다운 → HTML 변환 (간단 버전)
-const renderedContent = computed(() => {
-  if (!post.value?.content) return ''
-  
-  let html = post.value.content
-    // 헤딩
-    .replace(/^### (.*$)/gim, '<h3 id="$1">$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2 id="$1">$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1 id="$1">$1</h1>')
-    // 리스트
-    .replace(/^\- (.*$)/gim, '<li>$1</li>')
-    .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
-    // 굵게, 기울임
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    // 줄바꿈
-    .replace(/\n\n/gim, '</p><p>')
-    .replace(/\n/gim, '<br>')
-  
-  return `<p>${html}</p>`
-})
-
 // 목차 추출
 const tocItems = computed(() => {
-  if (!post.value?.content) return []
-  
+  const content = renderedContent.value
+  if (!content) return []
+
   const items: { id: string; text: string; depth: number }[] = []
-  const regex = /^(#{2,3}) (.+)$/gm
+  const regex = /<h([2-3])[^>]*id="([^"]*)"[^>]*>(.+?)<\/h\1>/g
   let match
-  
-  while ((match = regex.exec(post.value.content)) !== null) {
-    const depth = match[1]?.length || 2
-    const text = match[2]?.trim() || ''
-    
-    if (text) {
-      items.push({
-        id: text,
-        text: text,
-        depth: depth
-      })
+
+  while ((match = regex.exec(content)) !== null) {
+    const level = match[1]
+    const id = match[2]
+    const rawText = match[3]
+
+    if (level && id && rawText) {
+      const depth = parseInt(level, 10)
+      const text = rawText.replace(/<[^>]*>/g, '').trim()
+
+      items.push({ id, text, depth })
     }
   }
-  
+
   return items
 })
 
-// 이전/다음 글 (같은 카테고리)
-const surroundPosts = ref<{ prev: Post | null | undefined; next: Post | null | undefined }>({
+// 이전/다음 글
+const surroundPosts = ref<{ prev: Post | null; next: Post | null }>({
   prev: null,
   next: null
 })
 
-// 관련 글 (같은 카테고리)
+// 관련 글
 const relatedPosts = ref<Post[]>([])
 
 // 관련 글 로드
@@ -299,10 +313,10 @@ const loadRelatedPosts = async () => {
   // 이전/다음 글 설정
   const currentIndex = posts.findIndex(p => p.slug === slug)
   if (currentIndex > 0) {
-    surroundPosts.value.next = posts[currentIndex - 1]
+    surroundPosts.value.next = posts[currentIndex - 1] ?? null
   }
   if (currentIndex < posts.length - 1) {
-    surroundPosts.value.prev = posts[currentIndex + 1]
+    surroundPosts.value.prev = posts[currentIndex + 1] ?? null
   }
 }
 
@@ -313,4 +327,12 @@ const formatDate = (dateString: string) => {
   const date = new Date(dateString)
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
 }
+
+// post 변경 감지 (다른 페이지로 이동했다 돌아올 때)
+watch(() => post.value?.id, async (newId) => {
+  if (newId) {
+    await renderContent()
+  }
+})
+
 </script>

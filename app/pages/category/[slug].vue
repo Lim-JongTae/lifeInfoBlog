@@ -82,10 +82,10 @@
 
       <!-- 광고 영역 -->
        <!-- 글 목록 중간 -->
-      <AdSense type="banner" slot="1234567895" />
-      <div class="my-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg h-24 flex items-center justify-center text-gray-400">
+      <AdSense type="banner" slot="1234567895" class="mt-4" />
+      <!-- <div class="my-8 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg h-24 flex items-center justify-center text-gray-400">
         광고 영역 (AdSense)
-      </div>
+      </div> -->
 
       <!-- 페이지네이션 -->
       <div v-if="totalPages > 1" class="flex justify-center mt-8">

@@ -12,7 +12,7 @@
   const route = useRoute()
   
   const fullUrl = computed(() => `${config.public.siteUrl}${route.fullPath}`)
-  const ogImage = computed(() => props.image || `${config.public.siteUrl}/og-image.png`)
+  const ogImage = computed(() => props.image || `${config.public.siteUrl}/lifeinfo.png`)
   
   useHead({
     title: props.title,

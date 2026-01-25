@@ -214,7 +214,8 @@ await loadPosts()
 
 // 로그아웃
 const handleLogout = async () => {
-  await supabase.auth.signOut()
+  const authStore = useAuthStore()
+  await authStore.logout()
   router.push('/admin/login')
 }
 
