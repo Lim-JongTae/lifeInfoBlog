@@ -33,6 +33,8 @@ export interface PostsResponse {
   total: number
   page: number
   limit: number
+  ActiveId?: string | null
+  level?: number
 }
 
 // 게시글 조회 파라미터
@@ -43,6 +45,18 @@ export interface PostQueryParams {
   search?: string
 }
 
+export interface GitHubFrontmatter {
+  title?: string
+  description?: string
+  [key: string]: any
+}
+
+export interface GitHubDoc {
+  title: string
+  description?: string
+  content: string
+  frontmatter: GitHubFrontmatter
+}
 // 배지 색상 타입
 export type BadgeColor = 'neutral' | 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error'
 

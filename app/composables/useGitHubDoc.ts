@@ -5,39 +5,32 @@
  * const { doc, pending, error } = await useGitHubDoc('owner', 'repo', 'docs/sample.md')
  */
 
-interface GitHubFrontmatter {
-  title?: string
-  description?: string
-  [key: string]: any
-}
-
-interface GitHubDoc {
-  title: string
-  description?: string
-  content: string
-  frontmatter: GitHubFrontmatter
-}
+import type { GitHubFrontmatter, GitHubDoc } from '~~/app/types/types'
 
 // 프론트매터 파싱
 const parseFrontmatter = (markdown: string): [GitHubFrontmatter, string] => {
   const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/m)
 
-  if (!frontmatterMatch) {
+  if (!frontmatterMatch || frontmatterMatch.length < 3) {
     return [{}, markdown]
   }
 
-  const [, frontmatterStr, content] = frontmatterMatch
+  const frontmatterStr = frontmatterMatch[1] || ''
+  const content = frontmatterMatch[2] || ''
   const frontmatter: GitHubFrontmatter = {}
 
   // YAML 프론트매터 파싱
-  frontmatterStr.split('\n').forEach(line => {
-    const match = line.match(/^(\w+):\s*(.+)$/)
-    if (match) {
-      const [, key, value] = match
-      // 따옴표 제거
-      frontmatter[key] = value.replace(/^['"]|['"]$/g, '')
-    }
-  })
+  if (frontmatterStr) {
+    frontmatterStr.split('\n').forEach(line => {
+      const match = line.match(/^(\w+):\s*(.+)$/)
+      if (match && match[1] && match[2]) {
+        const key = match[1]
+        const value = match[2]
+        // 따옴표 제거
+        frontmatter[key] = value.replace(/^['"]|['"]$/g, '')
+      }
+    })
+  }
 
   return [frontmatter, content.trim()]
 }

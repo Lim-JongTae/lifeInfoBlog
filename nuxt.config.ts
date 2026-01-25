@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   srcDir: 'app/',  
-  modules: ['@nuxt/ui', '@nuxt/content', '@nuxt/image', '@nuxtjs/supabase', '@pinia/nuxt', '@nuxtjs/sitemap'],
+  modules: ['@nuxt/ui', '@nuxt/content', '@nuxtjs/mdc', '@nuxt/image', '@nuxtjs/supabase', '@pinia/nuxt', '@nuxtjs/sitemap'],
   css: ['~/assets/css/main.css'],
   supabase: {
     redirectOptions: {
@@ -55,6 +55,24 @@ export default defineNuxtConfig({
       ]
     }
   },
+  content: {
+    build: {
+      markdown: {
+        highlight: {
+          langs: [
+            'json',
+            'javascript',
+            'typescript',
+            'python',
+            'html',
+            'css',
+            'md',
+            'vue'
+          ]
+        }
+      }
+    }
+  },
 
   nitro: {
     preset: 'vercel'
@@ -63,5 +81,5 @@ export default defineNuxtConfig({
   sitemap: {
     sources: ['/api/__sitemap__/urls'],
     exclude: ['/admin/**', '/admin']
-  },
+  }
 })

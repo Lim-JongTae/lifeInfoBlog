@@ -16,3 +16,12 @@
 .clouds-animation {
   animation: clouds-drift 60s linear infinite;
 }
+
+/* 코드 블록 스타일 */
+pre {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto;
+}
+
+code {
+  @apply font-mono text-sm;
+}

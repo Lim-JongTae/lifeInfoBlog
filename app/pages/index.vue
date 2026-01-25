@@ -1,7 +1,17 @@
 <template>
    <div>
+    <!-- 로딩 상태 -->
+    <div v-if="loading" class="py-12">
+      <UContainer>
+        <div class="space-y-4">
+          <USkeleton class="h-12 w-full" />
+          <USkeleton class="h-96 w-full" />
+        </div>
+      </UContainer>
+    </div>
+
     <!-- Hero Section -->
-    <section class="relative py-16 md:py-24 bg-cover bg-center">
+    <section v-else class="relative py-16 md:py-24 bg-cover bg-center">
       <!-- 구름 레이어 -->
       <div class="absolute inset-0 pointer-events-none overflow-hidden">
         <img 
@@ -41,7 +51,7 @@
     </section>
 
     <!-- 인기글 Section -->
-    <section class="py-12">
+    <section v-if="!loading && popularPosts.length > 0" class="py-12">
       <UContainer>
         <div class="flex items-center justify-between mb-8">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -88,14 +98,14 @@
     </section>
 
     <!-- 광고 배너 영역 (AdSense 자리) -->
-    <section class="py-4">
-      <UContainer>        
+    <section v-if="!loading" class="py-4">
+      <UContainer>
         <AdSense type="banner" slot="1234567890" />
       </UContainer>
     </section>
 
     <!-- 최신글 Section -->
-    <section class="py-12">
+    <section v-if="!loading && recentPosts.length > 0" class="py-12">
       <UContainer>
         <div class="mb-8">
           <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -140,9 +150,14 @@
       </UContainer>
     </section>
     <!-- 최신글 섹션 아래 -->
-    <AdSense type="banner" slot="1234567891" />
+    <div v-if="!loading" class="py-4">
+      <UContainer>
+        <AdSense type="banner" slot="1234567891" />
+      </UContainer>
+    </div>
+
     <!-- 카테고리별 Section -->
-    <section class="py-12 bg-gray-50 dark:bg-gray-900">
+    <section v-if="!loading && categories.length > 0" class="py-12 bg-gray-50 dark:bg-gray-900">
       <UContainer>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-8">
           📂 카테고리별 보기
