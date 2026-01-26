@@ -49,7 +49,7 @@ export const usePostStore = defineStore('post', {
         $fetch('/api/stats/views', {
           method: 'POST',
           body: { slug }
-        }).catch(() => {})
+        }).catch((e) => console.error ('View count error:', e))
 
         return post
       } catch (e: any) {

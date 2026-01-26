@@ -27,9 +27,7 @@
               size="sm"
               @click="$router.back()"
             />
-          </div>
-
-          <ClientOnly>
+          </div>        
 
           <!-- 헤더 -->
           <header class="mb-8">
@@ -62,7 +60,7 @@
                 :key="item.id"
                 :data-heading-id="item.id"
                 @click="scrollToHeading(item.id)"
-                class="w-full text-left block text-sm transition-all duration-200 border-l-2 -ml-2px"
+                class="w-full text-left block text-sm transition-all duration-200 border-l-2 "
                 :class="[
                   item.depth === 3 ? 'pl-6' : 'pl-4',
                   activeHeadingId === item.id
@@ -126,7 +124,7 @@
               <p v-else class="text-sm text-gray-400">목차가 없습니다.</p>
             </aside>
           </div>
-          </ClientOnly>
+          
         </div>
       </div>
     </UContainer>
@@ -136,13 +134,13 @@
 <script setup lang="ts">
 const route = useRoute()
 const slug = route.params.slug as string
-
+const normalizedSlug = Array.isArray(slug) ? slug.join('/') : (slug as string)
 // Nuxt Content v3 방식으로 쿼리
 const { data: doc, pending } = useAsyncData(
   `docs-${slug}`,
-  () => queryCollection('content').path(`/docs/${slug}`).first()
+  // ( () => queryCollection('docs').path(`/docs/${normalizedSlug}`).first()
+   () => queryCollection('content').path(`/docs/${slug}`).first()
 )
-
 // 참조
 const containerRef = ref<HTMLElement | null>(null)
 const desktopArticleRef = ref<HTMLElement | null>(null)

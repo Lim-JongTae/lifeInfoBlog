@@ -55,6 +55,15 @@
       >
         H2
       </UButton>
+      <UButton
+        size="xs"
+        :color="editor?.isActive('heading', { level: 3 }) ? 'primary' : 'neutral'"
+        variant="ghost"
+        title="제목 3"
+        @click="editor?.chain().focus().toggleHeading({ level: 3 }).run()"
+      >
+        H3
+      </UButton>
 
       <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
 
@@ -63,8 +72,87 @@
         :color="editor?.isActive('bulletList') ? 'primary' : 'neutral'"
         variant="ghost"
         icon="i-heroicons-list-bullet"
-        title="리스트"
+        title="글머리 기호"
         @click="editor?.chain().focus().toggleBulletList().run()"
+      />
+      <UButton
+        size="xs"
+        :color="editor?.isActive('orderedList') ? 'primary' : 'neutral'"
+        variant="ghost"
+        icon="i-heroicons-numbered-list"
+        title="번호 매기기"
+        @click="editor?.chain().focus().toggleOrderedList().run()"
+      />
+
+      <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <UButton
+        size="xs"
+        :color="editor?.isActive('blockquote') ? 'primary' : 'neutral'"
+        variant="ghost"
+        icon="i-heroicons-chat-bubble-bottom-center-text"
+        title="인용구"
+        @click="editor?.chain().focus().toggleBlockquote().run()"
+      />
+      <UButton
+        size="xs"
+        :color="editor?.isActive('codeBlock') ? 'primary' : 'neutral'"
+        variant="ghost"
+        icon="i-heroicons-code-bracket"
+        title="코드 블록"
+        @click="editor?.chain().focus().toggleCodeBlock().run()"
+      />
+
+      <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <!-- 링크 -->
+      <UButton
+        size="xs"
+        :color="editor?.isActive('link') ? 'primary' : 'neutral'"
+        variant="ghost"
+        icon="i-heroicons-link"
+        title="링크"
+        @click="setLink"
+      />
+
+      <!-- 이미지 업로드 -->
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-heroicons-photo"
+        title="이미지 업로드"
+        :loading="uploading"
+        @click="triggerImageUpload"
+      />
+      <input
+        ref="imageInput"
+        type="file"
+        accept="image/*"
+        class="hidden"
+        @change="handleImageUpload"
+      />
+
+      <div class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <!-- 실행 취소/다시 실행 -->
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-heroicons-arrow-uturn-left"
+        title="실행 취소"
+        :disabled="!editor?.can().undo()"
+        @click="editor?.chain().focus().undo().run()"
+      />
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-heroicons-arrow-uturn-right"
+        title="다시 실행"
+        :disabled="!editor?.can().redo()"
+        @click="editor?.chain().focus().redo().run()"
       />
     </div>
 
@@ -92,16 +180,24 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-
+const imageInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
 let isUpdatingFromEditor = false
 
 const editor = useEditor({
   content: props.modelValue || '',
   extensions: [
     StarterKit,
-    Image,
+    Image.configure({
+      HTMLAttributes: {
+        class: 'rounded-lg max-w-full'
+      }
+    }),
     Link.configure({
-      openOnClick: false
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'text-primary underline'
+      }
     }),
     Underline,
     Placeholder.configure({
@@ -119,13 +215,63 @@ const editor = useEditor({
 })
 
 watch(() => props.modelValue, (newValue) => {
-  // 에디터에서 업데이트한 경우 무시 (커서 위치 보존)
   if (isUpdatingFromEditor || !editor.value || !newValue) return
 
   if (newValue !== editor.value.getHTML()) {
     editor.value.commands.setContent(newValue)
   }
 })
+
+// 링크 추가
+const setLink = () => {
+  const previousUrl = editor.value?.getAttributes('link').href
+  const url = window.prompt('URL을 입력하세요:', previousUrl)
+  
+  if (url === null) return
+  
+  if (url === '') {
+    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run()
+    return
+  }
+  
+  editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+}
+
+// 이미지 업로드 트리거
+const triggerImageUpload = () => {
+  imageInput.value?.click()
+}
+
+// 이미지 업로드 처리
+const handleImageUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  
+  if (!file) return
+
+  uploading.value = true
+
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const result = await $fetch<{ url: string }>('/api/upload/image', {
+      method: 'POST',
+      body: formData
+    })
+
+    // 에디터에 이미지 삽입
+    editor.value?.chain().focus().setImage({ src: result.url }).run()
+  } catch (e) {
+    console.error('Image upload error:', e)
+    alert('이미지 업로드에 실패했습니다.')
+  } finally {
+    uploading.value = false
+    if (imageInput.value) {
+      imageInput.value.value = ''
+    }
+  }
+}
 
 onBeforeUnmount(() => {
   editor.value?.destroy()
@@ -138,5 +284,12 @@ onBeforeUnmount(() => {
   min-height: 200px;
   max-height: 500px;
   overflow-y: auto;
+}
+
+.tiptap-editor :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
 }
 </style>

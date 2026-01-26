@@ -72,7 +72,7 @@ const handleLogin = async () => {
       throw new Error('관리자 권한이 없습니다.')
     }
 
-    router.push('/admin')
+    router.push('/admin/login')
   } catch (e: any) {
     error.value = e.message || '로그인에 실패했습니다.'
   } finally {
