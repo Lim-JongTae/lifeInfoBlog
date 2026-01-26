@@ -1,9 +1,10 @@
+
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // 카테고리 생성
+  // 1) 카테고리 upsert (기존과 동일)
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: 'finance' },
@@ -62,18 +63,18 @@ async function main() {
     })
   ])
 
-  console.log('카테고리 생성 완료:', categories.length)
+  console.log('카테고리 생성/업서트 완료:', categories.length)
 
-  // 카테고리 찾기
+  // 2) 카테고리 참조
   const finance = categories.find(c => c.slug === 'finance')!
   const support = categories.find(c => c.slug === 'support')!
   const pension = categories.find(c => c.slug === 'pension')!
   const insurance = categories.find(c => c.slug === 'insurance')!
   const tips = categories.find(c => c.slug === 'tips')!
 
-  // 샘플 게시글 생성
+  // 3) 카테고리별 2개씩 총 10개 포스트만 구성
   const postsData = [
-    // 금융위기탈출
+    // 금융위기탈출 (2개)
     {
       slug: 'anti-seizure-account-2026',
       title: '압류방지통장 만드는 법 (2026년 최신)',
@@ -94,27 +95,8 @@ async function main() {
       published: true,
       viewCount: 12890
     },
-    {
-      slug: 'personal-rehabilitation-guide',
-      title: '개인회생 신청 절차와 비용',
-      description: '개인회생 신청 자격, 절차, 비용, 기간을 상세히 안내합니다.',
-      content: `## 개인회생이란?\n\n개인회생은 법원을 통해 채무를 조정받는 제도입니다.`,
-      categoryId: finance.id,
-      tags: ['개인회생', '채무조정'],
-      published: true,
-      viewCount: 9870
-    },
-    {
-      slug: 'credit-recovery-committee',
-      title: '신용회복위원회 채무조정 신청 방법',
-      description: '신용회복위원회를 통한 채무조정 제도와 신청 방법을 알아봅니다.',
-      content: `## 신용회복위원회란?\n\n신용회복위원회는 채무자의 신용 회복을 돕는 기관입니다.`,
-      categoryId: finance.id,
-      tags: ['신용회복', '채무조정'],
-      published: true,
-      viewCount: 8540
-    },
-    // 정부지원금
+
+    // 정부지원금 (2개)
     {
       slug: 'earned-income-tax-credit-2025',
       title: '근로장려금 신청 방법 (2025)',
@@ -135,7 +117,8 @@ async function main() {
       published: true,
       viewCount: 1987
     },
-    // 연금가이드
+
+    // 연금가이드 (2개)
     {
       slug: 'national-pension-calculation',
       title: '국민연금 예상수령액 조회 방법',
@@ -156,7 +139,8 @@ async function main() {
       published: true,
       viewCount: 2890
     },
-    // 보험정보
+
+    // 보험정보 (2개)
     {
       slug: 'health-insurance-claim',
       title: '실손보험 청구 방법 (간편 청구)',
@@ -177,7 +161,8 @@ async function main() {
       published: true,
       viewCount: 1756
     },
-    // 생활꿀팁
+
+    // 생활꿀팁 (2개)
     {
       slug: 'phone-bill-save-tips',
       title: '통신비 월 3만원 아끼는 방법',
@@ -187,26 +172,44 @@ async function main() {
       tags: ['통신비', '절약'],
       published: true,
       viewCount: 2234
+    },
+    {
+      slug: 'winter-heating-25-saving',
+      title: '겨울 난방비 25% 줄이는 세팅 5가지',
+      description: '보일러·단열·습도·도어드래프트·온도습관',
+      content: `## 겨울 난방비 절감 팁\n\n야간 온도·외출 모드·문풍지·가습기 활용 등 즉시 적용 가능한 팁을 모았습니다.`,
+      categoryId: tips.id,
+      tags: ['난방', '광열비', '겨울'],
+      published: true,
+      viewCount: 1675
     }
   ]
 
+  // 4) 포스트 upsert
   for (const postData of postsData) {
     await prisma.post.upsert({
       where: { slug: postData.slug },
-      update: {},
+      update: {
+        // 개발 중 내용 갱신되면 업데이트되도록 최소 필드만 반영
+        title: postData.title,
+        description: postData.description,
+        content: postData.content,
+        categoryId: postData.categoryId,
+        tags: postData.tags,
+        published: postData.published,
+        viewCount: postData.viewCount
+      },
       create: postData
     })
   }
 
-  console.log('샘플 게시글 생성 완료:', postsData.length)
+  console.log('샘플 게시글 생성/업서트 완료:', postsData.length)
 
-  // 관리자 등록
+  // 5) 관리자 등록
   const admin = await prisma.adminUser.upsert({
     where: { email: 'ljt721@naver.com' },
     update: {},
-    create: {
-      email: 'ljt721@naver.com'
-    }
+    create: { email: 'ljt721@naver.com' }
   })
 
   console.log('관리자 등록 완료:', admin.email)
